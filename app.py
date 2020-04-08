@@ -1,10 +1,18 @@
-from flask import Flask, request, jsonify, json
+from flask import Flask, flash, request, jsonify, json
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 import os
+from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
+UPLOAD_FOLDER = 'static'
+ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+
+
+
+app = Flask(__name__, static_url_path='/static')
+app.secret_key='\xfd{H\xe5<\x95\xf9\xe3\x96.5\xd1\x01O<!\xd5\xa2\xa0\x9fR"\xa1\xa8'
 basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'crud.sqlite')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -32,11 +40,42 @@ user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 
 
+@app.route("/file", methods=["POST"])
+def upload_file():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return jsonify("{'error': 'none'}")
+            # return redirect(request.url)
+        else:
+        	file = request.files['file']
+        # if user does not select file, browser also
+        # submit a empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return "{'error':, 'none'}"
+            # return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return filename	
+
+def allowed_file(filename):
+	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route("/", methods=["GET"])
+def get_file():
+	return '<img src="'+os.path.join(app.config['UPLOAD_FOLDER'])+'/'+'index.jpg'+" />'
+	
+
 # endpoint to create new user
 @app.route("/user", methods=["POST"])
 def add_user():
     username = request.json['username']
     email = request.json['email']
+
     
     new_user = User(username, email)
 
