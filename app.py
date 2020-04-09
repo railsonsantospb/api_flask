@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 import os
 from werkzeug.utils import secure_filename
+import io
+from flask import send_file
 
 UPLOAD_FOLDER = 'static'
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
@@ -58,6 +60,7 @@ def upload_file():
             # return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
+            print(file.read())
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             return filename	
 
@@ -67,8 +70,9 @@ def allowed_file(filename):
 
 @app.route("/", methods=["GET"])
 def get_file():
-	return '<img src="'+os.path.join(app.config['UPLOAD_FOLDER'])+'/'+'index.jpg'+" />'
-	
+	return send_file(os.path.join(app.config['UPLOAD_FOLDER'])+'/'+'index.jpg', mimetype='image/jpg')
+
+
 
 # endpoint to create new user
 @app.route("/user", methods=["POST"])
